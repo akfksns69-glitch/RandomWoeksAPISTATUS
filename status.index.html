@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status — Random Works</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#fff;color:#111;font-family:'Inter',sans-serif;font-size:14px;line-height:1.7;padding:48px 24px;max-width:640px;margin:0 auto}
+        .t2{color:#888}
+        .t3{color:#bbb}
+        .up{color:#2a9d4e}
+        .sl{color:#c48a1a}
+        .dn{color:#c43c3c}
+        .sep{height:1px;background:#f0f0f0;margin:28px 0}
+        .label{font-size:11px;font-weight:600;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px}
+        .svc{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0}
+        .svc-name{font-weight:500}
+        .svc-right{font-size:13px;text-align:right}
+        .svc-ms{color:#ccc;font-size:12px;margin-left:10px}
+        .bars{display:flex;gap:1px;height:16px;margin:2px 0 8px}
+        .bars div{flex:1;border-radius:1px}
+        .b-g{background:#d4edda}.b-y{background:#fff3cd}.b-r{background:#f8d7da}.b-x{background:#f5f5f5}
+        .log-box{font-size:12px;color:#999;max-height:160px;overflow-y:auto;margin-top:8px;line-height:2}
+        .log-box::-webkit-scrollbar{width:0}
+        .log-ok{color:#2a9d4e}.log-w{color:#c48a1a}.log-e{color:#c43c3c}
+        .inc-item{padding:8px 0;border-bottom:1px solid #f5f5f5}
+        .inc-item:last-child{border:none}
+        .inc-title{font-weight:500;font-size:13px}
+        .inc-meta{font-size:12px;color:#bbb}
+        input,select,textarea{font-family:inherit;font-size:13px;border:1px solid #e8e8e8;padding:8px 10px;color:#333;outline:none;width:100%;border-radius:4px;background:#fff}
+        input:focus,select:focus,textarea:focus{border-color:#ccc}
+        textarea{resize:vertical}
+        button{font-family:inherit;font-size:13px;background:#111;color:#fff;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-weight:500}
+        button:hover{background:#333}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+        .form-row label{display:block;font-size:11px;color:#aaa;margin-bottom:4px;font-weight:500}
+        .full{grid-column:1/-1}
+        .global{font-size:15px;font-weight:500;margin:6px 0 0}
+        @media(max-width:500px){body{padding:32px 16px}.form-row{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+
+<div>
+    <span class="t2">Random Works</span>
+    <div class="global" id="gl">Checking systems</div>
+    <div class="t3" style="font-size:12px;margin-top:2px" id="glTime"></div>
+</div>
+
+<div class="sep"></div>
+
+<div class="label">Services</div>
+<div id="cards"></div>
+
+<div class="sep"></div>
+
+<div class="label">Log</div>
+<div class="log-box" id="log"></div>
+
+<div class="sep"></div>
+
+<div class="label">Incidents</div>
+<div id="inc"><span class="t3">Nothing to report.</span></div>
+
+<div class="sep"></div>
+
+<div class="label">Report an issue</div>
+<div style="margin-top:4px">
+    <div class="form-row">
+        <div>
+            <label>Service</label>
+            <select id="rS">
+                <option value="open-meteo">Open-Meteo Weather</option>
+                <option value="open-meteo-air">Open-Meteo Air Quality</option>
+                <option value="opensky">OpenSky Network</option>
+                <option value="usgs">USGS Earthquakes</option>
+                <option value="noaa-swpc">NOAA SWPC</option>
+                <option value="ipapi">IP-API</option>
+            </select>
+        </div>
+        <div>
+            <label>Severity</label>
+            <select id="rV">
+                <option value="minor">Minor</option>
+                <option value="major">Major</option>
+                <option value="critical">Critical</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-row"><div class="full"><label>What happened?</label><textarea id="rD" rows="2"></textarea></div></div>
+    <button onclick="report()">Submit</button>
+</div>
+
+<div class="sep"></div>
+<div style="font-size:11px;color:#ddd;margin-top:8px">Checks every 60s · Cycle <span id="cc">0</span></div>
+
+<script>
+const W=atob("aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ4MTE1ODIxNTY5MjcxNDE4NS9hN3dSR2NNR1VGOS1xVUZfS04wV2JfN25FMWJ4VVNGYVN0YWJnZE44RGUzakxNTjY3Vm9HOXczRmlqOTBNQXBWd0Z4LQ==");
+
+const A=[
+{id:"open-meteo",n:"Open-Meteo Weather",u:"https://api.open-meteo.com/v1/forecast?latitude=0&longitude=0&current_weather=true",c:1},
+{id:"open-meteo-air",n:"Open-Meteo Air Quality",u:"https://air-quality-api.open-meteo.com/v1/air-quality?latitude=0&longitude=0&current=pm10",c:1},
+{id:"opensky",n:"OpenSky Network",u:"https://opensky-network.org/api/states/all?lamin=0&lomin=0&lamax=1&lomax=1",c:0},
+{id:"usgs",n:"USGS Earthquakes",u:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_hour.geojson",c:1},
+{id:"noaa-swpc",n:"NOAA SWPC",u:"https://services.swpc.noaa.gov/json/planetary_k_index_1m.json",c:0},
+{id:"ipapi",n:"IP-API",u:"https://ip-api.com/json/?fields=status",c:1},
+];
+
+let S={},I=[],cc=0;
+const ts=()=>new Date().toLocaleTimeString("en-US",{hour12:false});
+
+function addLog(m,c){
+    const l=document.getElementById("log"),d=document.createElement("div");
+    const cl=c==="ok"?"log-ok":c==="w"?"log-w":c==="e"?"log-e":"t3";
+    d.innerHTML=`<span class="t3">${ts()}</span> <span class="${cl}">${m}</span>`;
+    l.appendChild(d);l.scrollTop=l.scrollHeight;
+    while(l.children.length>150)l.removeChild(l.firstChild);
+}
+
+function render(){
+    const c=document.getElementById("cards");c.innerHTML="";
+    A.forEach(a=>{
+        const s=S[a.id]||{st:"wait",ms:0,h:[]};
+        const cls=s.st==="up"?"up":s.st==="slow"?"sl":s.st==="down"?"dn":"t3";
+        const txt=s.st==="up"?"Operational":s.st==="slow"?"Degraded":s.st==="down"?"Outage":"—";
+        const pct=s.h.length?((s.h.filter(x=>x!=="down").length/s.h.length)*100).toFixed(1)+"%":"";
+        let bars="";for(let i=0;i<30;i++){const v=s.h[s.h.length-30+i];bars+=`<div class="${!v?"b-x":v==="up"?"b-g":v==="slow"?"b-y":"b-r"}"></div>`;}
+        const d=document.createElement("div");
+        d.innerHTML=`<div class="svc"><span class="svc-name">${a.n}</span><span class="svc-right"><span class="${cls}">${txt}</span><span class="svc-ms">${s.ms?s.ms+"ms":""} ${pct}</span></span></div><div class="bars">${bars}</div>`;
+        c.appendChild(d);
+    });
+}
+
+function updateGlobal(){
+    const ss=A.map(a=>S[a.id]?.st||"wait");
+    const el=document.getElementById("gl");
+    if(ss.some(s=>s==="down")){el.className="global dn";el.textContent="Disruption detected";}
+    else if(ss.some(s=>s==="slow")){el.className="global sl";el.textContent="Some services degraded";}
+    else if(ss.every(s=>s==="up")){el.className="global up";el.textContent="All systems operational";}
+    else{el.className="global t2";el.textContent="Checking systems";}
+    document.getElementById("glTime").textContent="Last checked "+ts();
+}
+
+async function ping(a){
+    const s=performance.now();
+    try{
+        const ac=new AbortController(),to=setTimeout(()=>ac.abort(),12000);
+        const r=await fetch(a.u,{mode:"cors",signal:ac.signal});
+        clearTimeout(to);const ms=Math.round(performance.now()-s);
+        if(!r.ok)return{st:"down",ms,code:r.status};
+        return ms>3000?{st:"slow",ms,code:r.status}:{st:"up",ms,code:r.status};
+    }catch(e){
+        const ms=Math.round(performance.now()-s);
+        if(e.name==="AbortError")return{st:"down",ms:12000,code:"timeout"};
+        if(e.name==="TypeError"&&ms<9000)return{st:"up",ms,code:"cors"};
+        return{st:"down",ms,code:"unreachable"};
+    }
+}
+
+async function disc(t,d,col,ping){
+    try{await fetch(W,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:"rw-status",content:ping?"@here":"",embeds:[{title:t,description:d,color:col,footer:{text:"Random Works"},timestamp:new Date().toISOString()}]})})}catch(e){}
+}
+
+function fireInc(a,r,down){
+    const sev=down?(a.c?"critical":"major"):"resolved";
+    const inc={n:a.n,sev,title:`${a.n} — ${down?"outage":"recovered"}`,desc:`${r.code} · ${r.ms}ms`,time:new Date().toISOString()};
+    I.unshift(inc);renderInc();
+    disc(inc.title,inc.desc,sev==="critical"?0xc43c3c:sev==="major"?0xc48a1a:0x2a9d4e,sev==="critical");
+}
+
+function renderInc(){
+    const c=document.getElementById("inc");
+    if(!I.length){c.innerHTML='<span class="t3">Nothing to report.</span>';return;}
+    c.innerHTML="";
+    I.slice(0,12).forEach(i=>{
+        const cl=i.sev==="critical"?"dn":i.sev==="major"?"sl":"up";
+        const d=document.createElement("div");d.className="inc-item";
+        d.innerHTML=`<div class="inc-title ${cl}">${i.title}</div><div class="inc-meta">${i.desc} · ${new Date(i.time).toLocaleString()}</div>`;
+        c.appendChild(d);
+    });
+}
+
+async function cycle(){
+    addLog("cycle "+(cc+1),"");
+    for(const a of A){
+        const r=await ping(a);
+        if(!S[a.id])S[a.id]={st:"wait",ms:0,h:[]};
+        const prev=S[a.id].st;
+        S[a.id].st=r.st;S[a.id].ms=r.ms;S[a.id].h.push(r.st);
+        if(S[a.id].h.length>100)S[a.id].h.shift();
+        addLog(`${a.n} → ${r.st} ${r.ms}ms`,r.st==="up"?"ok":r.st==="slow"?"w":"e");
+        if(prev&&prev!=="wait"&&prev!=="down"&&r.st==="down")fireInc(a,r,1);
+        if(prev==="down"&&r.st!=="down")fireInc(a,r,0);
+    }
+    cc++;document.getElementById("cc").textContent=cc;
+    updateGlobal();render();
+}
+
+function report(){
+    const svc=document.getElementById("rS").value,sev=document.getElementById("rV").value,desc=document.getElementById("rD").value.trim();
+    if(!desc)return;
+    const n=A.find(a=>a.id===svc)?.n||svc;
+    I.unshift({n,sev,title:`${n} — ${sev}`,desc,time:new Date().toISOString()});
+    renderInc();
+    disc(`${n} — ${sev} (report)`,desc,sev==="critical"?0xc43c3c:0xc48a1a,sev==="critical");
+    document.getElementById("rD").value="";
+    addLog(`reported ${sev} on ${n}`,"w");
+}
+
+render();cycle();setInterval(cycle,60000);
+</script>
+</body>
+</html>
